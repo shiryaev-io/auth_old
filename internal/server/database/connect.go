@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	dbUrl         = "postgresql://%s:%s@%s:%s/%s"
-	countOfRepeat = 5 * time.Second
+	dbUrl     = "postgresql://%s:%s@%s:%s/%s"
+	timeDelay = 5 * time.Second
 )
 
 // Подключение к БД
@@ -31,11 +31,11 @@ func ConnectDb(
 		dbConfig.name,
 	)
 
-	retry.ForeverSleep(countOfRepeat, func(attempt int) error {
-		
+	retry.ForeverSleep(timeDelay, func(attempt int) error {
+
 		logger.Infoln(logAttemptConnectDb, attempt)
 
-		ctx, cancel := context.WithTimeout(ctx, countOfRepeat)
+		ctx, cancel := context.WithTimeout(ctx, timeDelay)
 		defer cancel()
 
 		logger.Infoln(logTryConnectDb)
