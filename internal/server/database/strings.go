@@ -1,8 +1,10 @@
 package database
 
-var dbDriver = "DB_DRIVER"
-var dbHost = "DB_HOST"
-var dbPort = "DB_PORT"
-var dbName = "POSTGRES_DB"
-var dbUser = "POSTGRES_USER"
-var dbPassword = "POSTGRES_PASSWORD"
+const (
+	dbDriver   = "DB_DRIVER"
+	dbHost     = "DB_HOST"
+	dbPort     = "DB_PORT"
+	dbName     = "POSTGRES_DB"
+	dbUser     = "POSTGRES_USER"
+	dbPassword = "POSTGRES_PASSWORD"
+)

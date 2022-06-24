@@ -44,9 +44,10 @@ func ConnectDb(
 		if err != nil {
 			logger.Fatalf(logFatalConnectDb, err)
 			return err
+		} else {
+			logger.Infoln(logConnectSuccess)
 		}
 
-		logger.Infoln(logConnectSuccess)
 		return nil
 	})
 
