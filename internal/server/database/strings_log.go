@@ -1,6 +1,8 @@
 package database
 
-var logAttemptConnectDb = "Попытка подключения к БД: %s"
-var logTryConnectDb = "Подключение к БД"
-var logFatalConnectDb = "Не удалось подключиться к БД, ошибка: %s"
-var logConnectSuccess = "База данных успешно подключена"
+const (
+	logAttemptConnectDb = "Попытка подключения к БД: %s"
+	logTryConnectDb     = "Подключение к БД"
+	logFatalConnectDb   = "Не удалось подключиться к БД, ошибка: %v"
+	logConnectSuccess   = "База данных успешно подключена"
+)
