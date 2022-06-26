@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  auth_db:
+    container_name: auth_db
+    image: postgres:14.3-alpine
+    restart: always
+    env_file: .env
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    healthcheck:
+      test: "exit 0"
+    # TODO: Добавить volume
+
+  auth_service:
+    container_name: auth_service
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: always
+    env_file: .env
+    ports:
+      - "${SERVICE_PORT}:${SERVICE_PORT}"
+    depends_on:
+      - auth_db
+    networks:
+      - service_network
+
+networks:
+  service_network:
