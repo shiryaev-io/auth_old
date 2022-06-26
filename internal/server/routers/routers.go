@@ -7,13 +7,15 @@ import (
 )
 
 const (
-	urlAuth = "/auth"
+	get = "GET"
 
+	urlAuth = "/auth"
 	// Путь для входа пользователя
 	urlSignIn = urlAuth + "/signin"
 )
 
 // Инициализация роутеров
 func Init(router *mux.Router) {
-	router.HandleFunc(urlSignIn, controllers.SigIn).Methods("POST")
+	// TODO: Для авторизации использовать POST
+	router.HandleFunc(urlSignIn, controllers.SigIn).Methods(get)
 }

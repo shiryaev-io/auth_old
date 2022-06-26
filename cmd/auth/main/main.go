@@ -1,24 +1,26 @@
-package cmd
+package main
 
 import (
 	"auth/internal/server"
+	"auth/internal/server/routers"
 	"auth/pkg/logging"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/joho/godotenv"
+	"github.com/gorilla/mux"
+	// "github.com/joho/godotenv"
 )
 
 func main() {
 	logger := logging.GetLogger()
 
-	err := godotenv.Load()
-	if err != nil {
-		logger.Fatalf(logFailedAccessFileEnv, err)
-	} else {
-		logger.Fatalf(logGetEnvSuccess)
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	logger.Fatalf(logFailedAccessFileEnv, err)
+	// } else {
+	// 	logger.Fatalf(logGetEnvSuccess)
+	// }
 
 	// Канал для сигналов
 	sig := make(chan bool)
@@ -30,7 +32,7 @@ func main() {
 
 	for quit := false; !quit; {
 		go func() {
-			server.Run()
+			initAndRanServer(logger)
 			loop <- nil
 		}()
 
@@ -73,4 +75,14 @@ func listenerSignal(sig chan bool, logger *logging.Logger) {
 		// Оповещение о прекращении работы
 		sig <- quit
 	}
+}
+
+
+func initAndRanServer(logger *logging.Logger) {
+
+	logger.Infoln(logInitRouters)
+	router := mux.NewRouter()
+	routers.Init(router)
+
+	server.Run(router, logger)
 }
