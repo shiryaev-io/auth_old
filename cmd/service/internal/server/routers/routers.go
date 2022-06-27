@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"auth/internal/server/controllers"
+	"auth/cmd/service/internal/server/controllers"
 
 	"github.com/gorilla/mux"
 )

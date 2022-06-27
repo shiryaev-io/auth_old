@@ -1,7 +1,7 @@
 package server
 
 import (
-	"auth/pkg/logging"
+	"auth/cmd/service/pkg/logging"
 	"log"
 	"net/http"
 	"os"

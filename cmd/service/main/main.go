@@ -1,26 +1,18 @@
 package main
 
 import (
-	"auth/internal/server"
-	"auth/internal/server/routers"
-	"auth/pkg/logging"
+	"auth/cmd/service/internal/server"
+	"auth/cmd/service/internal/server/routers"
+	"auth/cmd/service/pkg/logging"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/gorilla/mux"
-	// "github.com/joho/godotenv"
 )
 
 func main() {
 	logger := logging.GetLogger()
-
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	logger.Fatalf(logFailedAccessFileEnv, err)
-	// } else {
-	// 	logger.Fatalf(logGetEnvSuccess)
-	// }
 
 	// Канал для сигналов
 	sig := make(chan bool)
@@ -76,7 +68,6 @@ func listenerSignal(sig chan bool, logger *logging.Logger) {
 		sig <- quit
 	}
 }
-
 
 func initAndRanServer(logger *logging.Logger) {
 

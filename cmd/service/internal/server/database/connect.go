@@ -1,7 +1,7 @@
 package database
 
 import (
-	"auth/pkg/logging"
+	"auth/cmd/service/pkg/logging"
 	"context"
 	"fmt"
 	"time"
