@@ -10,6 +10,8 @@ services:
       - "${DB_PORT}:${DB_PORT}"
     healthcheck:
       test: "exit 0"
+    networks:
+      - service_network
     # TODO: Добавить volume
 
   auth_service:
