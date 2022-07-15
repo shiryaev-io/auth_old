@@ -1,9 +1,14 @@
 package main
 
 import (
-	"auth/cmd/service/internal/server"
-	"auth/cmd/service/internal/server/routers"
-	"auth/cmd/service/pkg/logging"
+	"auth/cmd/internal/res/strings"
+	"auth/cmd/internal/server"
+	"auth/cmd/internal/server/adapters/db/postgresql"
+	"auth/cmd/internal/server/config"
+	"auth/cmd/internal/server/routers"
+	"auth/cmd/internal/server/services"
+	"auth/cmd/pkg/logging"
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,7 +29,7 @@ func main() {
 
 	for quit := false; !quit; {
 		go func() {
-			initAndRanServer(logger)
+			initAndRunServer(logger)
 			loop <- nil
 		}()
 
@@ -50,7 +55,7 @@ func listenerSignal(sig chan bool, logger *logging.Logger) {
 	)
 
 	for signal := range c {
-		logger.Infof(logGetSignalSuccess, signal.String())
+		logger.Infof(strings.LogGetSignalSuccess, signal.String())
 
 		switch signal {
 		case syscall.SIGINT, syscall.SIGTERM:
@@ -69,11 +74,29 @@ func listenerSignal(sig chan bool, logger *logging.Logger) {
 	}
 }
 
-func initAndRanServer(logger *logging.Logger) {
+func initAndRunServer(logger *logging.Logger) {
 
-	logger.Infoln(logInitRouters)
+	logger.Infoln(strings.LogInitRouters)
 	router := mux.NewRouter()
 	routers.Init(router)
 
-	server.Run(router, logger)
+	dbConfig := config.NewConfigDb()
+	database, err := postgresql.NewAuthStorage(
+		context.Background(),
+		dbConfig,
+		logger,
+	)
+	if err != nil {
+		logger.Fatalln(strings.LogGetDatabaseError)
+	}
+
+	authService := services.NewAuthService(database)
+
+	serv := server.NewServer(
+		router,
+		authService,
+		logger,
+	)
+
+	serv.Run()
 }
