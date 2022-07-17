@@ -2,20 +2,40 @@ package routers
 
 import (
 	"auth/cmd/internal/server/controllers"
+	"auth/cmd/internal/server/middlewares"
+	"auth/cmd/internal/server/services"
+	"auth/cmd/pkg/logging"
 
 	"github.com/gorilla/mux"
 )
 
 const (
-	get = "GET"
+	get  = "GET"
+	post = "POST"
 
 	urlAuth = "/auth"
 	// Путь для входа пользователя
-	urlSignIn = urlAuth + "/signin"
+	urlLogIn = urlAuth + "/login"
+	// Путь для выхода пользователя
+	urlLogOut = urlAuth + "/logout"
+	// Путь для обновления токенов
+	urlRefresh = urlAuth + "/refresh"
 )
 
-// Инициализация роутеров
-func Init(router *mux.Router) {
-	// TODO: Для авторизации использовать POST
-	router.HandleFunc(urlSignIn, controllers.SigIn).Methods(get)
+type ApiRouter struct {
+	Router      *mux.Router
+	AuthService *services.AuthService
+	Logger      *logging.Logger
+}
+
+func (apiRouter *ApiRouter) Init() {
+
+	userController := controllers.UserController{
+		UserService: apiRouter.AuthService.UserService,
+	}
+
+	apiRouter.Router.HandleFunc(
+		urlLogIn,
+		middlewares.ErrorMiddleware(userController.Login),
+	).Methods(post)
 }
