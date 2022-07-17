@@ -76,12 +76,10 @@ func listenerSignal(sig chan bool, logger *logging.Logger) {
 
 func initAndRunServer(logger *logging.Logger) {
 
-	logger.Infoln(strings.LogInitRouters)
-	router := mux.NewRouter()
-	routers.Init(router)
-
+	// Получение конфигурации
 	dbConfig := config.NewConfigDb()
-	database, err := postgresql.NewAuthStorage(
+	// Коннект к БД
+	authDatabase, err := postgresql.NewAuthStorage(
 		context.Background(),
 		dbConfig,
 		logger,
@@ -90,13 +88,46 @@ func initAndRunServer(logger *logging.Logger) {
 		logger.Fatalln(strings.LogGetDatabaseError)
 	}
 
-	authService := services.NewAuthService(database)
+	// Реализации интерфейсов для работы с БД
+	tokenStorage := &postgresql.TokenDatabase{
+		AuthDatabase: authDatabase,
+	}
+	userStorage := &postgresql.UserDatabase{
+		AuthDatabase: authDatabase,
+	}
 
+	// Получение сервисов
+	tokenService := &services.TokenService{
+		TokenStorage: tokenStorage,
+		Logger:       logger,
+	}
+	userService := &services.UserService{
+		UserStorage:  userStorage,
+		TokenService: tokenService,
+	}
+
+	// Композиция сервисов
+	authService := &services.AuthService{
+		TokenService: tokenService,
+		UserService:  userService,
+	}
+
+	logger.Infoln(strings.LogInitRouters)
+	router := mux.NewRouter()
+
+	apiRouter := &routers.ApiRouter{
+		Router:      router,
+		AuthService: authService,
+		Logger:      logger,
+	}
+
+	// Инициализация сервера
 	serv := server.NewServer(
-		router,
+		apiRouter,
 		authService,
 		logger,
 	)
 
+	// Запуск сервера
 	serv.Run()
 }
