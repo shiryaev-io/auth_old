@@ -1,6 +1,7 @@
 package services
 
 import (
+	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/dtos"
 	"auth/cmd/internal/server/exceptions"
 	"auth/cmd/internal/server/models"
@@ -25,8 +26,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	// Проверяет, существует ли пользователь в БД
 	user, err := service.UserStorage.FindOne(email)
 	if err != nil {
-		// TODO: Вынести строку в strings
-		return nil, exceptions.BadRequest("Пользователь с таким email не найден", err)
+		return nil, exceptions.BadRequest(strings.ErrorUserWithEmailNotFound, err)
 	}
 	// Проверяет, совпадает ли пароль,
 	// который прислал клиент, с паролем, который хранится в БД
@@ -37,8 +37,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	)
 	// Если пароли не совпадают
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		// TODO: Вынести строку в strings
-		return nil, exceptions.BadRequest("Неверный пароль", err)
+		return nil, exceptions.BadRequest(strings.ErrorInvalidPassword, err)
 	}
 
 	userDto := &dtos.UserDto{
@@ -49,15 +48,14 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	// Генерируется пара токенов: access и refresh
 	tokens, err := service.TokenService.GenerateTokens(userDto)
 	if err != nil {
-		// TODO: Вынести строку в strings
-		return nil, exceptions.BadRequest("Не удалось сгенерировать токен", err)
+		return nil, exceptions.BadRequest(strings.ErrorFailedGenerateTokens, err)
 	}
 
 	// Сохранение токена в БД
 	_, err = service.TokenService.SaveToken(user.Id, tokens.RefreshToken)
 	if err != nil {
-		// TODO: Вынести строку в strings
-		return nil, exceptions.BadRequest("Не удалось сохранить токен", err)
+		return nil, exceptions.BadRequest(strings.ErrorFailedSaveRefreshToken, err)
 	}
+
 	return tokens, nil
 }

@@ -3,6 +3,7 @@ package services
 import (
 	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/dtos"
+	"auth/cmd/internal/server/exceptions"
 	"auth/cmd/internal/server/models"
 	"auth/cmd/pkg/logging"
 	"os"
@@ -38,8 +39,7 @@ func (service *TokenService) GenerateTokens(user *dtos.UserDto) (*models.Token, 
 	// Генерация access токена
 	accessToken, err := service.createAccessToken(user)
 	if err != nil {
-		// TODO: вместо `error` возвращать кастомную ошибку ApiError
-		return nil, err
+		return nil, exceptions.ServerError(strings.ErrorFailedLogin, err)
 	}
 
 	service.Logger.Infoln(strings.LogCreateRefreshToken)
@@ -47,8 +47,7 @@ func (service *TokenService) GenerateTokens(user *dtos.UserDto) (*models.Token, 
 	// Генерация refresh токена
 	refreshToken, err := service.createRefreshToken(user)
 	if err != nil {
-		// TODO: вместо `error` возвращать кастомную ошибку ApiError
-		return nil, err
+		return nil, exceptions.ServerError(strings.ErrorFailedLogin, err)
 	}
 
 	token := &models.Token{
@@ -108,7 +107,7 @@ func (service *TokenService) createAccessToken(user *dtos.UserDto) (string, erro
 	).Unix()
 
 	claims := jwt.StandardClaims{
-		IssuedAt:  expiredAt,
+		ExpiresAt: expiredAt,
 		Subject:   user.Id,
 	}
 
@@ -119,12 +118,7 @@ func (service *TokenService) createAccessToken(user *dtos.UserDto) (string, erro
 	service.Logger.Infoln(strings.LogGenerateAccessToken)
 
 	// Генерация access токена
-	accessToken, err := jwt.NewWithClaims(
-		jwt.SigningMethodHS256,
-		claims,
-	).SignedString(
-		[]byte(signJwtAceessSecret), // Токен подписывается секретным ключом из .env
-	)
+	accessToken, err := service.createJwt(claims, signJwtAceessSecret)
 	if err != nil {
 		service.Logger.Fatalf(strings.LogFatalGenerateAccessToken, err)
 		return strings.Empty, err
@@ -143,7 +137,7 @@ func (service *TokenService) createRefreshToken(user *dtos.UserDto) (string, err
 	).Unix()
 
 	claims := jwt.StandardClaims{
-		IssuedAt:  expiredAt,
+		ExpiresAt: expiredAt,
 		Subject:   user.Id,
 	}
 
@@ -154,12 +148,7 @@ func (service *TokenService) createRefreshToken(user *dtos.UserDto) (string, err
 	service.Logger.Infoln(strings.LogGenerateRefreshToken)
 
 	// Генерация refresh токена
-	refreshToken, err := jwt.NewWithClaims(
-		jwt.SigningMethodHS256,
-		claims,
-	).SignedString(
-		[]byte(signJwtRefreshSecret), // Токен подписывается секретным ключом из .env
-	)
+	refreshToken, err := service.createJwt(claims, signJwtRefreshSecret)
 	if err != nil {
 		service.Logger.Fatalf(strings.LogFatalGenerateRefreshToken, err)
 		return strings.Empty, err
@@ -168,4 +157,17 @@ func (service *TokenService) createRefreshToken(user *dtos.UserDto) (string, err
 	service.Logger.Infoln(strings.LogSuccessGeneratedRefreshToken)
 
 	return refreshToken, nil
+}
+
+// Генерация JWT токена
+func (service *TokenService) createJwt(
+	claims jwt.StandardClaims,
+	secretKey string,
+) (string, error) {
+	return jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		claims,
+	).SignedString(
+		[]byte(secretKey), // Токен подписывается секретным ключом
+	)
 }

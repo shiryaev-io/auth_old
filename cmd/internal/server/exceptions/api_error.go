@@ -48,3 +48,13 @@ func BadRequest(message string, err error) *ApiError {
 		DevMessage: err.Error(),
 	}
 }
+
+// Ошибка сервера: не сгенерировался токен и т.д.
+func ServerError(message string, err error) *ApiError {
+	return &ApiError{
+		Status:     http.StatusInternalServerError,
+		Err:        err,
+		Message:    message,
+		DevMessage: err.Error(),
+	}
+}
