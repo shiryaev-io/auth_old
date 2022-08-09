@@ -9,4 +9,7 @@ const (
 	ErrorFailedGenerateTokens   = "Не удалось сгенерировать токены"
 	ErrorFailedSaveRefreshToken = "Не удалось сохранить refresh токен"
 	ErrorFailedLogin            = "Не удалось авторизоваться, попробуйте позже"
+	ErrorInvalidData            = "Неверные данные, попробуйте еще раз"
+	ErrorWrongLoginOrPassword   = "Неверный логин или пароль. Попробуйте еще раз"
+	ErrorInternal               = "Внутренняя ошибка. Попробуйте позже"
 )

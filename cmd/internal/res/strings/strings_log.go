@@ -40,4 +40,23 @@ const (
 	LogUpdageRefreshToken        = "Обновление refresh токена"
 	LogFatalUpdateRefreshToken   = "Ошибка обновления refresh токена: %s"
 	LogSuccessUpdateRefreshToken = "Refresh токен был успешно обновлен"
+
+	// Сценарий авторизации
+	LogGettingRequestBody                  = "Получение тела запроса Body"
+	LogFatalReadRequestBody                = "Не удалось прочитать тело запроса Body: %v"
+	LogGettingJsonFromRequestBody          = "Получение JSON из тела запроса Body"
+	LogFatalReadJsonFromRequestBody        = "Не удалось прочитать JSON из тела запроса Body: %v"
+	LogUserAuthByLoginAndPassword          = "Авторизация пользователя по логину и паролю"
+	LogFatalUserAuthByLoginAndPassword     = "Не удалось авторизовать пользователя по логину и паролю: %v"
+	LogConvertTokensToJson                 = "Конвертация токенов в JSON"
+	LogFatalConvertTokensToJson            = "Не удалось преобразовать токены в JSON: %v"
+	LogGettingUserByEmail                  = "Получение пользователя по email: %s"
+	LogFatalFindUserByEmail                = "Не удалось найти пользователя по email: %v"
+	LogCheckIfPasswordsMatch               = "Проверка, совпадают ли пароли"
+	LogFatalPasswordsNotMatch              = "Пароли не совпадают: %v"
+	LogCreateObjectWithUserData            = "Создание объекта с пользовательскими данными"
+	LogGenerateAccessAndRefreshTokens      = "Генерация access и refresh токенов"
+	LogFatalGenerateAccessAndRefreshTokens = "Не удалось сгенерировать access и refresh токены: %v"
+	LogSaveRefreshTokenInDb                = "Сохранение refresh токена в БД"
+	LogFatalSaveRefreshTokenInDb           = "Не удалось сохранить refresh токена в БД: %v"
 )
