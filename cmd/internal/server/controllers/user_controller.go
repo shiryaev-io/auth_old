@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	cookieRefreshToken = "refresh_token"
+	cookieRefreshToken = "refreshToken"
 )
 
 // Контроллер пользователя
