@@ -20,8 +20,3 @@ func (storage *UserDatabase) FindOne(email string) (*models.User, error) {
 		ActiovationLink: "test link",
 	}, nil
 }
-
-func (storage *UserDatabase) RemoveToken(refreshToken string) (string, error) {
-	// TODO: Реализовать метод удаления refresh токена
-	return "Example Removed Token", nil
-}

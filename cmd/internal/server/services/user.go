@@ -13,7 +13,6 @@ import (
 // Хранилище для пользователей
 type UserStorage interface {
 	FindOne(email string) (*models.User, error)
-	RemoveToken(refreshToken string) (string, error)
 }
 
 // Сервис для работы с пользователями
