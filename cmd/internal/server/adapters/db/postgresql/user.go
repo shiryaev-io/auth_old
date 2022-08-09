@@ -1,6 +1,8 @@
 package postgresql
 
-import "auth/cmd/internal/server/models"
+import (
+	"auth/cmd/internal/server/models"
+)
 
 // Структура для реализации интрефейса UserStorage
 type UserDatabase struct {
@@ -17,4 +19,9 @@ func (storage *UserDatabase) FindOne(email string) (*models.User, error) {
 		IsActivated:     true,
 		ActiovationLink: "test link",
 	}, nil
+}
+
+func (storage *UserDatabase) RemoveToken(refreshToken string) (string, error) {
+	// TODO: Реализовать метод удаления refresh токена
+	return "Example Removed Token", nil
 }
