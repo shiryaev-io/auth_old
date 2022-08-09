@@ -2,13 +2,12 @@ package server
 
 import (
 	"auth/cmd/internal/res/strings"
+	"auth/cmd/internal/server/routers"
 	"auth/cmd/internal/server/services"
 	"auth/cmd/pkg/logging"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -18,17 +17,18 @@ const (
 
 // Структура сервера
 type server struct {
-	router      *mux.Router
+	router      *routers.ApiRouter
 	authService *services.AuthService
 	logger      *logging.Logger
 }
 
 // Создание сткруктуры Server
 func NewServer(
-	router *mux.Router,
+	router *routers.ApiRouter,
 	authService *services.AuthService,
 	logger *logging.Logger,
 ) *server {
+	router.Init()
 	return &server{
 		router,
 		authService,
@@ -44,5 +44,5 @@ func (server *server) Run() {
 	serviceUrl := host + ":" + port
 
 	server.logger.Infof(strings.LogRunServer, serviceUrl)
-	log.Fatal(http.ListenAndServe(serviceUrl, server.router))
+	log.Fatal(http.ListenAndServe(serviceUrl, server.router.Router))
 }

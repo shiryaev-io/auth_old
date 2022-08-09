@@ -9,7 +9,7 @@ import (
 )
 
 // Структура базы данных
-type authStorage struct {
+type authDatabase struct {
 	pool   *pgxpool.Pool
 	logger *logging.Logger
 }
@@ -18,14 +18,14 @@ func NewAuthStorage(
 	ctx context.Context,
 	config *config.ConfigDb,
 	logger *logging.Logger,
-) (*authStorage, error) {
+) (*authDatabase, error) {
 
 	pool, err := connectDb(ctx, config, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return &authStorage{
+	return &authDatabase{
 		pool:   pool,
 		logger: logger,
 	}, nil
