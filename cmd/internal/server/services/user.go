@@ -80,3 +80,36 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 
 	return tokens, nil
 }
+
+// Разлогин пользователя
+func (service *UserService) Logout(refreshToken string) (*dtos.TokenDto, error) {
+	service.Logger.Infoln("Вызов функции удаления refresh токена")
+
+	token, err := service.removeToken(refreshToken)
+	if err != nil {
+		service.Logger.Fatalf("Не удалось удалить refresh токен: %v", err)
+
+		return nil, err
+	}
+
+	service.Logger.Infoln("Refresh токен успешно был удален")
+
+	return token, nil
+}
+
+
+// Логика удаления токена из БД
+func (service *UserService) removeToken(refreshToken string) (*dtos.TokenDto, error) {
+	service.Logger.Infoln("Вызов функции удаления токена из БД")
+
+	tokenData, err := service.TokenService.DeleteOne(refreshToken)
+	if err != nil {
+		service.Logger.Fatalf("Не удалось удать refresh токен из БД: %v", err)
+
+		return nil, err
+	}
+
+	service.Logger.Infoln("Refresh токен был успешно удален из БД")
+
+	return tokenData, nil
+}

@@ -1,6 +1,8 @@
 package postgresql
 
-import "auth/cmd/internal/server/models"
+import (
+	"auth/cmd/internal/server/models"
+)
 
 // Структура для реализации интрефейса UserStorage
 type UserDatabase struct {

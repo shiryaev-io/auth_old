@@ -171,3 +171,13 @@ func (service *TokenService) createJwt(
 		[]byte(secretKey), // Токен подписывается секретным ключом
 	)
 }
+
+
+// Удаление одного токена из БД
+func (service *TokenService) DeleteOne(refreshToken string) (*dtos.TokenDto, error) {
+	// TODO: удаление refresh токена
+	return &dtos.TokenDto{
+		User:         "Example User",
+		RefreshToken: refreshToken,
+	}, nil
+}

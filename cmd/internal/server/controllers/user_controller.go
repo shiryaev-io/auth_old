@@ -11,6 +11,10 @@ import (
 	"net/http"
 )
 
+const (
+	cookieRefreshToken = "refreshToken"
+)
+
 // Контроллер пользователя
 type UserController struct {
 	UserService *services.UserService
@@ -64,5 +68,40 @@ func (controller *UserController) Login(
 
 	response.WriteHeader(http.StatusOK)
 	response.Write(jsonBody)
+	return nil
+}
+
+// Разлогин пользователя
+func (controller *UserController) Logout(
+	response http.ResponseWriter,
+	request *http.Request,
+) error {
+	controller.Logger.Infoln(strings.LogGettingRefreshTokenFromCookies)
+
+	cookie, err := request.Cookie(cookieRefreshToken)
+	if err != nil {
+		controller.Logger.Fatalf(strings.LogFatalGettingCookies, err)
+
+		return exceptions.BadRequest(strings.ErrorTryAgaint, err)
+	}
+
+	refreshToken := cookie.Value
+	if refreshToken == strings.Empty {
+		controller.Logger.Fatalf(strings.LogFatalRefreshTokenIsEmpty, err)
+
+		return exceptions.BadRequest(strings.ErrorRefreshTokenMustNotBeEmpty, err)
+	}
+
+	controller.Logger.Infoln(strings.LogUserLogout)
+
+	_, err = controller.UserService.Logout(refreshToken)
+	if err != nil {
+		controller.Logger.Fatalf(strings.LogFatalUserLogout, err)
+
+		return exceptions.BadRequest(strings.ErrorLogout, err)
+	}
+
+	response.WriteHeader(http.StatusNoContent)
+
 	return nil
 }

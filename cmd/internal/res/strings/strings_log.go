@@ -59,4 +59,11 @@ const (
 	LogFatalGenerateAccessAndRefreshTokens = "Не удалось сгенерировать access и refresh токены: %v"
 	LogSaveRefreshTokenInDb                = "Сохранение refresh токена в БД"
 	LogFatalSaveRefreshTokenInDb           = "Не удалось сохранить refresh токена в БД: %v"
+
+	// Сценарий разлогирования
+	LogGettingRefreshTokenFromCookies = "Получение refreh токена из Cookies"
+	LogFatalGettingCookies            = "Ошибка получения cookie. Необходимо передавать refresh токен: %v"
+	LogFatalRefreshTokenIsEmpty       = "Refresh токен пустой"
+	LogUserLogout                     = "Разлогинивание пользователя"
+	LogFatalUserLogout                = "Не удалось разлогинить пользователя: %v"
 )
