@@ -51,11 +51,11 @@ func (apiRouter *ApiRouter) Init() {
 	apiRouter.Router.HandleFunc(
 		urlLogOut,
 		middlewares.ErrorMiddleware(userController.Logout),
-	)
+	).Methods(post)
 
 	// Обновление пары access и refresh токенов
 	apiRouter.Router.HandleFunc(
 		urlRefresh,
 		middlewares.ErrorMiddleware(tokenController.Refresh),
-	)
+	).Methods(get)
 }
