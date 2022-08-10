@@ -12,7 +12,8 @@ import (
 
 // Хранилище для пользователей
 type UserStorage interface {
-	FindOne(email string) (*models.User, error)
+	FindByEmail(email string) (*models.User, error)
+	FindById(userId string) (*models.User, error)
 }
 
 // Сервис для работы с пользователями
@@ -27,7 +28,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	service.Logger.Infof(strings.LogGettingUserByEmail, email)
 
 	// Проверяет, существует ли пользователь в БД
-	user, err := service.UserStorage.FindOne(email)
+	user, err := service.UserStorage.FindByEmail(email)
 	if err != nil {
 		service.Logger.Fatalf(strings.LogFatalFindUserByEmail, err)
 
@@ -102,7 +103,7 @@ func (service *UserService) Logout(refreshToken string) (*dtos.TokenDto, error) 
 func (service *UserService) removeToken(refreshToken string) (*dtos.TokenDto, error) {
 	service.Logger.Infoln("Вызов функции удаления токена из БД")
 
-	tokenData, err := service.TokenService.DeleteOne(refreshToken)
+	tokenData, err := service.TokenService.RemoveToken(refreshToken)
 	if err != nil {
 		service.Logger.Fatalf("Не удалось удать refresh токен из БД: %v", err)
 

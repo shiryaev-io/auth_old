@@ -16,6 +16,8 @@ const (
 )
 
 // Контроллер пользователя
+// Необходим для работы с пользователями, 
+// например авторизация, разлогирование и т.д.
 type UserController struct {
 	UserService *services.UserService
 	Logger      *logging.Logger
@@ -89,7 +91,7 @@ func (controller *UserController) Logout(
 	if refreshToken == strings.Empty {
 		controller.Logger.Fatalf(strings.LogFatalRefreshTokenIsEmpty, err)
 
-		return exceptions.BadRequest(strings.ErrorRefreshTokenMustNotBeEmpty, err)
+		return exceptions.UnauthorizedError(err)
 	}
 
 	controller.Logger.Infoln(strings.LogUserLogout)
