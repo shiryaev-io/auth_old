@@ -29,12 +29,12 @@ func (apiError *ApiError) Marshal() []byte {
 }
 
 // Возвращает ошибку, что пользователь не авторизован
-func UnauthorizedError() *ApiError {
+func UnauthorizedError(err error) *ApiError {
 	return &ApiError{
 		Status:     http.StatusUnauthorized,
-		Err:        nil,
-		Message:    "Пользователь не авторизован", // TODO: вынести сообщение в strings
-		DevMessage: strings.Empty,
+		Err:        err,
+		Message:    strings.ErrorUserUnauthorized,
+		DevMessage: err.Error(),
 	}
 }
 

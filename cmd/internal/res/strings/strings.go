@@ -15,4 +15,5 @@ const (
 	ErrorTryAgaint                  = "Ошибка, попробуйте еще раз"
 	ErrorRefreshTokenMustNotBeEmpty = "Refresh токен не должен быть пустым"
 	ErrorLogout                     = "Ошибка разлогина. Попробуйте еще раз"
+	ErrorUserUnauthorized           = "Пользователь не авторизован"
 )
