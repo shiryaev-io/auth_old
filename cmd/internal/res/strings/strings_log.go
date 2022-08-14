@@ -66,4 +66,8 @@ const (
 	LogFatalRefreshTokenIsEmpty       = "Refresh токен пустой"
 	LogUserLogout                     = "Разлогинивание пользователя"
 	LogFatalUserLogout                = "Не удалось разлогинить пользователя: %v"
+
+	// Валидация токена
+	LogStartParseAndValidateToken = "Начало парсинга и валидация токена"
+	LogFatalParseJwtToken         = "Ошибка парсинга jwt токена: %v"
 )
