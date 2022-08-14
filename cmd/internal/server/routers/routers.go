@@ -20,6 +20,8 @@ const (
 	urlLogOut = urlAuth + "/logout"
 	// Путь для обновления токенов
 	urlRefresh = urlAuth + "/refresh"
+	// Главный путь приложения
+	urlSchedule = "/schedule"
 )
 
 // Структура, которая хранит роутер и сервисы
@@ -41,21 +43,42 @@ func (apiRouter *ApiRouter) Init() {
 		Logger:       apiRouter.Logger,
 	}
 
-	// Авторизация пользователя
-	apiRouter.Router.HandleFunc(
+	// Аутентификация пользователя
+	apiRouter.handlerFunc(
 		urlLogIn,
-		middlewares.ErrorMiddleware(userController.Login),
+		userController.Login,
 	).Methods(post)
 
 	// Разлогин пользователя
-	apiRouter.Router.HandleFunc(
+	apiRouter.handlerFunc(
 		urlLogOut,
-		middlewares.ErrorMiddleware(userController.Logout),
+		userController.Logout,
 	).Methods(post)
 
 	// Обновление пары access и refresh токенов
-	apiRouter.Router.HandleFunc(
+	apiRouter.handlerFunc(
 		urlRefresh,
-		middlewares.ErrorMiddleware(tokenController.Refresh),
+		tokenController.Refresh,
 	).Methods(get)
+
+	authMiddleware := middlewares.AuthMiddleware{
+		TokenService: apiRouter.AuthService.TokenService,
+		Logger:       apiRouter.Logger,
+	}
+	// Установка middleware авторизации
+	apiRouter.Router.
+		Path(urlSchedule).
+		Subrouter().
+		Use(authMiddleware.Middleware)
+}
+
+// Устанавливает ErrorMiddleware
+func (apiRouter *ApiRouter) handlerFunc(
+	path string,
+	handler middlewares.ErrorHandlerFunc,
+) *mux.Route {
+	return apiRouter.Router.HandleFunc(
+		path,
+		middlewares.ErrorMiddleware(handler).ServeHTTP,
+	)
 }

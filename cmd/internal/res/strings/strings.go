@@ -1,7 +1,10 @@
 package strings
 
 const (
-	Empty = ""
+	Empty string = "" // явное указание string, чтобы go не подсвечивал код
+	Space string = " "
+
+	MessageUnforeseenError = "Непредвиденная ошибка"
 
 	// Строки ошибок
 	ErrorUserWithEmailNotFound      = "Пользователь с таким email не найден"
@@ -16,4 +19,8 @@ const (
 	ErrorRefreshTokenMustNotBeEmpty = "Refresh токен не должен быть пустым"
 	ErrorLogout                     = "Ошибка разлогина. Попробуйте еще раз"
 	ErrorUserUnauthorized           = "Пользователь не авторизован"
+	ErrorHeaderAuthorizationIsEmpty = "Пустой Header Authorization"
+	ErrorInvalidAuthorizationHeader = "Некорректный Header Authorization"
+	ErrorTokenIsEmpty               = "Токен пустой"
+	ErrorUnexpectedSigningMethod    = "Неверный метод подписи токена"
 )

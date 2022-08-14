@@ -105,17 +105,13 @@ func (service *TokenService) SaveToken(userId, refreshToken string) (*dtos.Token
 
 // Обновляет пару access и refresh токенов
 func (service *TokenService) Refresh(refreshToken string) (*models.Token, error) {
-	service.Logger.Infoln(strings.LogGetJwtRefreshSecret)
+	service.Logger.Infoln("Валидация Refresh токена")
 
-	signJwtRefreshSecret := os.Getenv(jwtRefreshSecret)
-
-	service.Logger.Infoln("Парсинг и валидация токена")
-
-	payload, errorValidate := service.validateToken(refreshToken, signJwtRefreshSecret)
+	payload, errorValidate := service.validateRefreshToken(refreshToken)
 
 	service.Logger.Infoln("Каст интерфейса Claims в структуру StandardClaims")
 
-	standardClaims := payload.(jwt.StandardClaims)
+	standardClaims := payload.(*jwt.StandardClaims)
 
 	service.Logger.Infoln("Поиск refresh токена в БД")
 
@@ -237,20 +233,34 @@ func (service *TokenService) createJwt(
 	)
 }
 
+// Валидация access токена
+func (service *TokenService) ValidateAccessToken(tokenString string) (jwt.Claims, error) {
+	signJwtAceessSecret := os.Getenv(jwtAccessSecret)
+	payload, err := service.validateToken(tokenString, signJwtAceessSecret)
+	return payload, err
+}
+
+// Валидация access токена
+func (service *TokenService) validateRefreshToken(tokenString string) (jwt.Claims, error) {
+	signJwtRefreshSecret := os.Getenv(jwtRefreshSecret)
+	payload, err := service.validateToken(tokenString, signJwtRefreshSecret)
+	return payload, err
+}
+
 // Валидация токена. Необходимо, чтобы понимать, что токен не был подделан
 // или что срок годности не иссяк
 func (service *TokenService) validateToken(tokenString, signingKey string) (jwt.Claims, error) {
-	service.Logger.Infoln("Начало парсинг и валидация токена")
+	service.Logger.Infoln(strings.LogStartParseAndValidateToken)
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			// TODO: вынести строку в ресурсы
-			return nil, errors.New("Unexpected signing method")
+			return nil, errors.New(strings.ErrorUnexpectedSigningMethod)
 		}
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		service.Logger.Fatalf("Ошибка парсинга jwt токена: %v", err)
+		// TODO: вынести строку в ресурсы
+		service.Logger.Fatalf(strings.LogFatalParseJwtToken, err)
 
 		return nil, err
 	}
