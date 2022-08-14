@@ -1,8 +1,8 @@
 package strings
 
 const (
-	Empty = ""
-	Space = " "
+	Empty string = "" // явное указание string, чтобы go не подсвечивал код
+	Space string = " "
 
 	MessageUnforeseenError = "Непредвиденная ошибка"
 

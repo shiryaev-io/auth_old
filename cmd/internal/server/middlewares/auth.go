@@ -13,10 +13,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type keyString string
+
 const (
-	authorizationHeader = "Authorization"
-	bearer              = "Bearer"
-	userDataKey         = "userData"
+	authorizationHeader string    = "Authorization"
+	bearer              string    = "Bearer"
+	keyUserData         keyString = "userData"
 )
 
 // Содержит сервис для работы с токенами
@@ -39,7 +41,7 @@ func (middleware *AuthMiddleware) Middleware(handler http.Handler) http.Handler 
 		// TODO: обернуть userId в стркутуру (типа UserRequest)
 		userId := standardClaims.Id
 		parentContext := request.Context()
-		contextWithUserData := context.WithValue(parentContext, userDataKey, userId)
+		contextWithUserData := context.WithValue(parentContext, keyUserData, userId)
 		requestWithContext := request.Clone(contextWithUserData)
 		handler.ServeHTTP(response, requestWithContext)
 	})
