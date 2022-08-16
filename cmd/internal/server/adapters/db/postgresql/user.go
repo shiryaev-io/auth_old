@@ -1,7 +1,12 @@
 package postgresql
 
 import (
-	"auth/cmd/internal/server/models"
+	"auth/cmd/internal/server/adapters/db/postgresql/queries"
+	"auth/cmd/internal/server/models/db"
+	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v4"
 )
 
 // Структура для реализации интрефейса UserStorage
@@ -10,27 +15,40 @@ type UserDatabase struct {
 }
 
 // Получение данных пользователя по Email
-func (storage *UserDatabase) FindByEmail(email string) (*models.User, error) {
-	// TODO: Релизовать метод получения пользователя по email 
-	return &models.User{
-		Id:              "Test user ID",
-		Email:           "test.user@email.test",
-		Username:        "Test username",
-		Password:        "Test password",
-		IsActivated:     true,
-		ActiovationLink: "test link",
-	}, nil
+func (storage *UserDatabase) FindByEmail(email string) (*db.User, error) {
+	user := &db.User{}
+	// TODO: возможно с помощью fmt нужно сформировать строку, где подставить данные вместо `?`
+	query := queries.QuerySelectUserByEmail
+	err := storage.AuthDatabase.
+		pool.
+		QueryRow(context.Background(), query, email).
+		Scan(
+			&user.Id,
+			&user.Email,
+			&user.Password,
+			&user.IsActivated,
+		)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	return user, nil
 }
 
 // Получение данных пользователя по ID
-func (storage *UserDatabase) FindById(userId string) (*models.User, error) {
-	// TODO: Релизовать метод получения пользователя по ID 
-	return &models.User{
-		Id:              "Test user ID",
-		Email:           "test.user@email.test",
-		Username:        "Test username",
-		Password:        "Test password",
-		IsActivated:     true,
-		ActiovationLink: "test link",
-	}, nil
+func (storage *UserDatabase) FindById(userId string) (*db.User, error) {
+	user := &db.User{}
+	query := queries.QuerySelectUserById
+	err := storage.AuthDatabase.
+		pool.
+		QueryRow(context.Background(), query, userId).
+		Scan(
+			&user.Id,
+			&user.Email,
+			&user.Password,
+			&user.IsActivated,
+		)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	return user, nil
 }
