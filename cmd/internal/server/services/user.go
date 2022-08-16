@@ -2,9 +2,9 @@ package services
 
 import (
 	"auth/cmd/internal/res/strings"
-	"auth/cmd/internal/server/dtos"
 	"auth/cmd/internal/server/exceptions"
-	"auth/cmd/internal/server/models"
+	"auth/cmd/internal/server/models/db"
+	"auth/cmd/internal/server/models/dto"
 	"auth/cmd/pkg/logging"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,8 +12,8 @@ import (
 
 // Хранилище для пользователей
 type UserStorage interface {
-	FindByEmail(email string) (*models.User, error)
-	FindById(userId string) (*models.User, error)
+	FindByEmail(email string) (*db.User, error)
+	FindById(userId string) (*db.User, error)
 }
 
 // Сервис для работы с пользователями
@@ -24,7 +24,7 @@ type UserService struct {
 }
 
 // Авторизация пользователя
-func (service *UserService) Login(email, password string) (*models.Token, error) {
+func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	service.Logger.Infof(strings.LogGettingUserByEmail, email)
 
 	// Проверяет, существует ли пользователь в БД
@@ -53,7 +53,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 
 	service.Logger.Infoln(strings.LogCreateObjectWithUserData)
 
-	userDto := &dtos.UserDto{
+	userDto := &dto.User{
 		Id:          user.Id,
 		Email:       user.Email,
 		IsActivated: user.IsActivated,
@@ -72,7 +72,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	service.Logger.Infoln(strings.LogSaveRefreshTokenInDb)
 
 	// Сохранение токена в БД
-	_, err = service.TokenService.SaveToken(user.Id, tokens.RefreshToken)
+	_, err = service.TokenService.SaveToken(user.Id, tokens.Refresh)
 	if err != nil {
 		service.Logger.Fatalf(strings.LogFatalSaveRefreshTokenInDb, err)
 
@@ -83,7 +83,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 }
 
 // Разлогин пользователя
-func (service *UserService) Logout(refreshToken string) (*dtos.TokenDto, error) {
+func (service *UserService) Logout(refreshToken string) (*dto.Token, error) {
 	service.Logger.Infoln("Вызов функции удаления refresh токена")
 
 	token, err := service.removeToken(refreshToken)
@@ -98,12 +98,11 @@ func (service *UserService) Logout(refreshToken string) (*dtos.TokenDto, error) 
 	return token, nil
 }
 
-
 // Логика удаления токена из БД
-func (service *UserService) removeToken(refreshToken string) (*dtos.TokenDto, error) {
+func (service *UserService) removeToken(refreshToken string) (*dto.Token, error) {
 	service.Logger.Infoln("Вызов функции удаления токена из БД")
 
-	tokenData, err := service.TokenService.RemoveToken(refreshToken)
+	tokenDto, err := service.TokenService.RemoveToken(refreshToken)
 	if err != nil {
 		service.Logger.Fatalf("Не удалось удать refresh токен из БД: %v", err)
 
@@ -112,5 +111,5 @@ func (service *UserService) removeToken(refreshToken string) (*dtos.TokenDto, er
 
 	service.Logger.Infoln("Refresh токен был успешно удален из БД")
 
-	return tokenData, nil
+	return tokenDto, nil
 }
