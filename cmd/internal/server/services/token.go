@@ -7,6 +7,7 @@ import (
 	"auth/cmd/internal/server/models/dto"
 	"auth/cmd/pkg/logging"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -55,8 +56,8 @@ func (service *TokenService) GenerateTokens(user *dto.User) (*dto.Tokens, error)
 	}
 
 	tokens := &dto.Tokens{
-		accessToken,
-		refreshToken,
+		Access: accessToken,
+		Refresh: refreshToken,
 	}
 
 	return tokens, nil
@@ -185,7 +186,7 @@ func (service *TokenService) createAccessToken(user *dto.User) (string, error) {
 
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiredAt,
-		Subject:   string(user.Id),
+		Subject:   fmt.Sprint(user.Id),
 	}
 
 	service.Logger.Infoln(strings.LogGetJwtAccessSecret)
@@ -215,7 +216,7 @@ func (service *TokenService) createRefreshToken(user *dto.User) (string, error) 
 
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiredAt,
-		Subject:   string(user.Id),
+		Subject:   fmt.Sprint(user.Id),
 	}
 
 	service.Logger.Infoln(strings.LogGetJwtRefreshSecret)
