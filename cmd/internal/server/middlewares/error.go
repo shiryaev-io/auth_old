@@ -3,18 +3,24 @@ package middlewares
 import (
 	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/exceptions"
+	"auth/cmd/internal/server/models/responses"
 	"errors"
 	"net/http"
 )
 
 // Функция handler, которая возвращает ошибку
-type ErrorHandlerFunc func(response http.ResponseWriter, request *http.Request) error
+type ErrorHandlerFunc func(response http.ResponseWriter, request *http.Request) (*responses.Common, error)
 
 // Обрабатывает ошибки
 func ErrorMiddleware(next ErrorHandlerFunc) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		err := next(response, request)
-		handleError(response, err)
+		commonResponse, err := next(response, request)
+		if err != nil {
+			handleError(response, err)
+			return
+		}
+		response.WriteHeader(commonResponse.Status)
+		response.Write(commonResponse.Body)
 	})
 }
 
@@ -26,6 +32,7 @@ func handleError(response http.ResponseWriter, err error) {
 
 		response.WriteHeader(apiError.Status)
 		response.Write(apiError.Marshal())
+		return
 	}
 
 	// Если ошибка не кастомная, то возвращаем 500 статус
