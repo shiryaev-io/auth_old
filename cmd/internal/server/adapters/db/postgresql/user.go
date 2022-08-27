@@ -4,9 +4,6 @@ import (
 	"auth/cmd/internal/server/adapters/db/postgresql/queries"
 	"auth/cmd/internal/server/models/db"
 	"context"
-	"errors"
-
-	"github.com/jackc/pgx/v4"
 )
 
 // Структура для реализации интрефейса UserStorage
@@ -28,14 +25,14 @@ func (storage *UserDatabase) FindByEmail(email string) (*db.User, error) {
 			&user.Password,
 			&user.IsActivated,
 		)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 // Получение данных пользователя по ID
-func (storage *UserDatabase) FindById(userId string) (*db.User, error) {
+func (storage *UserDatabase) FindById(userId int) (*db.User, error) {
 	user := &db.User{}
 	query := queries.QuerySelectUserById
 	err := storage.AuthDatabase.
@@ -47,7 +44,7 @@ func (storage *UserDatabase) FindById(userId string) (*db.User, error) {
 			&user.Password,
 			&user.IsActivated,
 		)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 	return user, nil
