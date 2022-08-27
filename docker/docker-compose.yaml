@@ -4,14 +4,23 @@ services:
   auth_db:
     container_name: auth_db
     image: postgres:14.3-alpine
-    restart: always
+    restart: unless-stopped
     env_file: .env
+    environment:
+      PGDATA: "/var/lib/postgresql/data/pgdata"
     ports:
       - "${DB_PORT}:${DB_PORT}"
     healthcheck:
-      test: "exit 0"
+      test: ["CMD-SHELL"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - service_network
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ..:/var/lib/postgresql/data
     # TODO: Добавить volume
 
   auth_service:
