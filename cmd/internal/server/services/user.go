@@ -13,7 +13,7 @@ import (
 // Хранилище для пользователей
 type UserStorage interface {
 	FindByEmail(email string) (*db.User, error)
-	FindById(userId string) (*db.User, error)
+	FindById(userId int) (*db.User, error)
 }
 
 // Сервис для работы с пользователями
@@ -30,7 +30,7 @@ func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	// Проверяет, существует ли пользователь в БД
 	user, err := service.UserStorage.FindByEmail(email)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalFindUserByEmail, err)
+		service.Logger.Infof(strings.LogFatalFindUserByEmail, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorUserWithEmailNotFound, err)
 	}
@@ -46,7 +46,7 @@ func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	)
 	// Если пароли не совпадают
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		service.Logger.Fatalf(strings.LogFatalPasswordsNotMatch, err)
+		service.Logger.Infof(strings.LogFatalPasswordsNotMatch, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorInvalidPassword, err)
 	}
@@ -64,7 +64,7 @@ func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	// Генерируется пара токенов: access и refresh
 	tokens, err := service.TokenService.GenerateTokens(userDto)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGenerateAccessAndRefreshTokens, err)
+		service.Logger.Infof(strings.LogFatalGenerateAccessAndRefreshTokens, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedGenerateTokens, err)
 	}
@@ -74,7 +74,7 @@ func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	// Сохранение токена в БД
 	_, err = service.TokenService.SaveToken(user.Id, tokens.Refresh)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalSaveRefreshTokenInDb, err)
+		service.Logger.Infof(strings.LogFatalSaveRefreshTokenInDb, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedSaveRefreshToken, err)
 	}
@@ -88,7 +88,8 @@ func (service *UserService) Logout(refreshToken string) (*dto.Token, error) {
 
 	token, err := service.removeToken(refreshToken)
 	if err != nil {
-		service.Logger.Fatalf("Не удалось удалить refresh токен: %v", err)
+		// TODO: вынести в строки
+		service.Logger.Infof("Не удалось удалить refresh токен: %v", err)
 
 		return nil, err
 	}
@@ -104,7 +105,8 @@ func (service *UserService) removeToken(refreshToken string) (*dto.Token, error)
 
 	tokenDto, err := service.TokenService.RemoveToken(refreshToken)
 	if err != nil {
-		service.Logger.Fatalf("Не удалось удать refresh токен из БД: %v", err)
+		// TODO: вынести в строки
+		service.Logger.Infof("Не удалось удать refresh токен из БД: %v", err)
 
 		return nil, err
 	}
