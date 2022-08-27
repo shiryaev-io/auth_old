@@ -55,8 +55,6 @@ func connectDb(
 			return nil
 		},
 	)
-	// TODO: возможно убрать/перенести в другое место метод Close()
-	defer pool.Close()
 
 	return pool, nil
 }
