@@ -6,8 +6,6 @@ import (
 	"auth/cmd/internal/server/models/dto"
 	"context"
 	"errors"
-
-	"github.com/jackc/pgx/v4"
 )
 
 // Сткруатруа для реелизации интерфейса TokenStorage
@@ -27,7 +25,7 @@ func (storage *TokenDatabase) FindByUserId(userId int) (*db.Token, error) {
 			&token.UserId,
 			&token.Value,
 		)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 	return token, nil
@@ -45,44 +43,41 @@ func (storage *TokenDatabase) FindToken(refreshToken string) (*db.Token, error) 
 			&token.UserId,
 			&token.Value,
 		)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 	return token, nil
 }
 
 // Сохранение токена в БД
-func (storage *TokenDatabase) SaveToken(tokenDto *dto.Token) (*db.Token, error) {
-	token := &db.Token{}
+func (storage *TokenDatabase) SaveToken(tokenDto *dto.Token) error {
 	query := queries.QueryUpdateToken
-	err := storage.AuthDatabase.
+	result, err := storage.AuthDatabase.
 		pool.
-		QueryRow(context.Background(), query, tokenDto.Value, tokenDto.Id).
-		Scan(
-			&token.Id,
-			&token.UserId,
-			&token.Value,
-		)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
+		Exec(context.Background(), query, tokenDto.Value, tokenDto.Id)
+	if err != nil {
+		return err
 	}
-	return token, nil
+	if result.RowsAffected() == 0 {
+		// TODO: вынести с строки
+		return errors.New("Ни одна строка не была обновлена")
+	}
+	return nil
 }
 
 
 // Создание новой записи в БД
 func (storage *TokenDatabase) CreateToken(userId int, refreshToken string) (*db.Token, error) {
-	token := &db.Token{}
+	token := &db.Token{
+		UserId: userId,
+		Value:  refreshToken,
+	}
 	query := queries.QueryInsertToken
 	err := storage.AuthDatabase.
 		pool.
 		QueryRow(context.Background(), query, userId, refreshToken).
-		Scan(
-			&token.Id,
-			&token.UserId,
-			&token.Value,
-		)
-	if errors.Is(err, pgx.ErrNoRows) {
+		Scan(&token.Id)
+	if err != nil {
 		return nil, err
 	}
 	return token, nil
@@ -100,7 +95,7 @@ func (storage *TokenDatabase) RemoveToken(refreshToken string) (*db.Token, error
 			&token.UserId,
 			&token.Value,
 		)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 	return token, nil
