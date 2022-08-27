@@ -1,4 +1,4 @@
-package requests
+package requests // TODO: переместить в models
 
 // Содержит данные пользователя для авторизации
 type UserRequest struct {
