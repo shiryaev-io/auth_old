@@ -30,7 +30,7 @@ type TokenStorage interface {
 	FindToken(refreshToken string) (*db.Token, error)
 	SaveToken(token *dto.Token) error
 	CreateToken(userId int, refreshToken string) (*db.Token, error)
-	RemoveToken(refreshToken string) (*db.Token, error)
+	RemoveToken(refreshToken string) error
 }
 
 // Сервис для токенов
@@ -118,37 +118,36 @@ func (service *TokenService) SaveToken(userId int, refreshToken string) (*dto.To
 
 // Обновляет пару access и refresh токенов
 func (service *TokenService) Refresh(refreshToken string) (*dto.Tokens, error) {
-	// TODO: вынести в строки
-	service.Logger.Infoln("Валидация Refresh токена")
+	service.Logger.Infoln(strings.LogValidateRefreshToken)
 
 	payload, err := service.validateRefreshToken(refreshToken)
 	if err != nil {
-		service.Logger.Infof("Ошибка валидации токена: %v", err)
+		service.Logger.Infof(strings.LogFatalValidateToken, err)
 
 		return nil, exceptions.UnauthorizedError(err)
 	}
 
-	service.Logger.Infoln("Каст интерфейса Claims в структуру StandardClaims")
+	service.Logger.Infoln(strings.LogCastClaimsToStandardClaims)
 
 	standardClaims := payload.(*jwt.StandardClaims)
 
-	service.Logger.Infoln("Поиск refresh токена в БД")
+	service.Logger.Infoln(strings.LogFindRefreshTokenInDb)
 
 	_, err = service.TokenStorage.FindToken(refreshToken)
 	if err != nil {
-		service.Logger.Infof("Не удалось найти токен в БД: %v", err)
+		service.Logger.Infof(strings.LogFatalFindTokenInDb, err)
 
 		return nil, exceptions.UnauthorizedError(err)
 	}
 
 	userId, err := strconv.Atoi(standardClaims.Subject)
 	if err != nil {
-		return nil, exceptions.BadRequest("Тип id пользователя должен быть Int", err)
+		return nil, exceptions.BadRequest(strings.ErrorTypeOfUserIdMustBeInt, err)
 	}
 
 	user, err := service.UserStorage.FindById(userId)
 	if err != nil {
-		service.Logger.Infof("Не удалось найти пользователя по ID в БД", err)
+		service.Logger.Infof(strings.LogFatalFincUserByIdInDb, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorUserWithEmailNotFound, err)
 	}
@@ -294,12 +293,7 @@ func (service *TokenService) validateToken(tokenString, signingKey string) (jwt.
 }
 
 // Удаление одного токена из БД
-func (service *TokenService) RemoveToken(refreshToken string) (*dto.Token, error) {
-	tokenFromDb, err := service.TokenStorage.RemoveToken(refreshToken)
-	tokenDto := &dto.Token{
-		Id:     tokenFromDb.Id,
-		UserId: tokenFromDb.UserId,
-		Value:  tokenFromDb.Value,
-	}
-	return tokenDto, err
+func (service *TokenService) RemoveToken(refreshToken string) error {
+	err := service.TokenStorage.RemoveToken(refreshToken)
+	return err
 }
