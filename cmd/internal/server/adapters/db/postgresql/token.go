@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/adapters/db/postgresql/queries"
 	"auth/cmd/internal/server/models/db"
 	"auth/cmd/internal/server/models/dto"
@@ -59,8 +60,7 @@ func (storage *TokenDatabase) SaveToken(tokenDto *dto.Token) error {
 		return err
 	}
 	if result.RowsAffected() == 0 {
-		// TODO: вынести с строки
-		return errors.New("Ни одна строка не была обновлена")
+		return errors.New(strings.ErrorNoRowHasBeenUpdated)
 	}
 	return nil
 }
@@ -84,19 +84,16 @@ func (storage *TokenDatabase) CreateToken(userId int, refreshToken string) (*db.
 }
 
 // Удаляет токен из БД
-func (storage *TokenDatabase) RemoveToken(refreshToken string) (*db.Token, error) {
-	token := &db.Token{}
+func (storage *TokenDatabase) RemoveToken(refreshToken string) error {
 	query := queries.QueryDeleteToken
-	err := storage.AuthDatabase.
+	result, err := storage.AuthDatabase.
 		pool.
-		QueryRow(context.Background(), query, refreshToken).
-		Scan(
-			&token.Id,
-			&token.UserId,
-			&token.Value,
-		)
+		Exec(context.Background(), query, refreshToken)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return token, nil
+	if result.RowsAffected() == 0 {
+		return errors.New(strings.ErrorNoRowHasBeenUDeleted)
+	}
+	return nil
 }
