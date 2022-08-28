@@ -83,35 +83,33 @@ func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 }
 
 // Разлогин пользователя
-func (service *UserService) Logout(refreshToken string) (*dto.Token, error) {
-	service.Logger.Infoln("Вызов функции удаления refresh токена")
+func (service *UserService) Logout(refreshToken string) error {
+	service.Logger.Infoln(strings.LogCallingRefreshTokenDeletaionFun)
 
-	token, err := service.removeToken(refreshToken)
+	err := service.removeToken(refreshToken)
 	if err != nil {
-		// TODO: вынести в строки
-		service.Logger.Infof("Не удалось удалить refresh токен: %v", err)
+		service.Logger.Infof(strings.LogFatalDeleteRefreshToken, err)
 
-		return nil, err
+		return err
 	}
 
-	service.Logger.Infoln("Refresh токен успешно был удален")
+	service.Logger.Infoln(strings.LogRefreshTokenSuccessDeleted)
 
-	return token, nil
+	return nil
 }
 
 // Логика удаления токена из БД
-func (service *UserService) removeToken(refreshToken string) (*dto.Token, error) {
-	service.Logger.Infoln("Вызов функции удаления токена из БД")
+func (service *UserService) removeToken(refreshToken string) error {
+	service.Logger.Infoln(strings.LogCallingTokenRemovalFunFromDb)
 
-	tokenDto, err := service.TokenService.RemoveToken(refreshToken)
+	err := service.TokenService.RemoveToken(refreshToken)
 	if err != nil {
-		// TODO: вынести в строки
-		service.Logger.Infof("Не удалось удать refresh токен из БД: %v", err)
+		service.Logger.Infof(strings.LogFatalGetRefreshTokenFromDb, err)
 
-		return nil, err
+		return err
 	}
 
-	service.Logger.Infoln("Refresh токен был успешно удален из БД")
+	service.Logger.Infoln(strings.LogRefreshTokenSuccessDeletedFromDb)
 
-	return tokenDto, nil
+	return nil
 }
