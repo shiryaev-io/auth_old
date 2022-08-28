@@ -3,8 +3,8 @@ package controllers
 import (
 	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/exceptions"
+	"auth/cmd/internal/server/models/requests"
 	"auth/cmd/internal/server/models/responses"
-	"auth/cmd/internal/server/requests"
 	"auth/cmd/internal/server/services"
 	"auth/cmd/pkg/logging"
 	"encoding/json"
@@ -97,7 +97,7 @@ func (controller *UserController) Logout(
 
 	controller.Logger.Infoln(strings.LogUserLogout)
 
-	_, err = controller.UserService.Logout(refreshToken)
+	err = controller.UserService.Logout(refreshToken)
 	if err != nil {
 		controller.Logger.Infof(strings.LogFatalUserLogout, err)
 
