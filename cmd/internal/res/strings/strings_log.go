@@ -61,13 +61,25 @@ const (
 	LogFatalSaveRefreshTokenInDb           = "Не удалось сохранить refresh токена в БД: %v"
 
 	// Сценарий разлогирования
-	LogGettingRefreshTokenFromCookies = "Получение refreh токена из Cookies"
-	LogFatalGettingCookies            = "Ошибка получения cookie. Необходимо передавать refresh токен: %v"
-	LogFatalRefreshTokenIsEmpty       = "Refresh токен пустой"
-	LogUserLogout                     = "Разлогинивание пользователя"
-	LogFatalUserLogout                = "Не удалось разлогинить пользователя: %v"
+	LogCallingRefreshTokenDeletaionFun  = "Вызов функции удаления refresh токена"
+	LogFatalDeleteRefreshToken          = "Не удалось удалить refresh токен: %v"
+	LogRefreshTokenSuccessDeleted       = "Refresh токен успешно был удален"
+	LogGettingRefreshTokenFromCookies   = "Получение refreh токена из Cookies"
+	LogFatalGettingCookies              = "Ошибка получения cookie. Необходимо передавать refresh токен: %v"
+	LogFatalRefreshTokenIsEmpty         = "Refresh токен пустой"
+	LogUserLogout                       = "Разлогинивание пользователя"
+	LogFatalUserLogout                  = "Не удалось разлогинить пользователя: %v"
+	LogCallingTokenRemovalFunFromDb     = "Вызов функции удаления токена из БД"
+	LogFatalGetRefreshTokenFromDb       = "Не удалось удать refresh токен из БД: %v"
+	LogRefreshTokenSuccessDeletedFromDb = "Refresh токен был успешно удален из БД"
 
 	// Валидация токена
 	LogStartParseAndValidateToken = "Начало парсинга и валидация токена"
 	LogFatalParseJwtToken         = "Ошибка парсинга jwt токена: %v"
+	LogValidateRefreshToken       = "Валидация Refresh токена"
+	LogFatalValidateToken         = "Ошибка валидации токена: %v"
+	LogCastClaimsToStandardClaims = "Каст интерфейса Claims в структуру StandardClaims"
+	LogFindRefreshTokenInDb       = "Поиск refresh токена в БД"
+	LogFatalFindTokenInDb         = "Не удалось найти токен в БД: %v"
+	LogFatalFincUserByIdInDb      = "Не удалось найти пользователя по ID в БД"
 )
