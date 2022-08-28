@@ -14,7 +14,6 @@ type UserDatabase struct {
 // Получение данных пользователя по Email
 func (storage *UserDatabase) FindByEmail(email string) (*db.User, error) {
 	user := &db.User{}
-	// TODO: возможно с помощью fmt нужно сформировать строку, где подставить данные вместо `?`
 	query := queries.QuerySelectUserByEmail
 	err := storage.AuthDatabase.
 		pool.
