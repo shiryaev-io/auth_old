@@ -22,7 +22,6 @@ func (storage *UserDatabase) FindByEmail(email string) (*db.User, error) {
 			&user.Id,
 			&user.Email,
 			&user.Password,
-			&user.IsActivated,
 		)
 	if err != nil {
 		return nil, err
@@ -41,7 +40,6 @@ func (storage *UserDatabase) FindById(userId int) (*db.User, error) {
 			&user.Id,
 			&user.Email,
 			&user.Password,
-			&user.IsActivated,
 		)
 	if err != nil {
 		return nil, err
