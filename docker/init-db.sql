@@ -15,7 +15,7 @@ CREATE TABLE tokens (
 );
 
 INSERT INTO
-    users (email, password, is_activated)
+    users (email, password)
 VALUES
     (
         'test@test.ru',
