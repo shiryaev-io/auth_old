@@ -3,6 +3,7 @@ package controllers
 import (
 	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/exceptions"
+	"auth/cmd/internal/server/models/responses"
 	"auth/cmd/internal/server/services"
 	"auth/cmd/pkg/logging"
 	"encoding/json"
@@ -21,7 +22,7 @@ type TokenController struct {
 func (controller *TokenController) Refresh(
 	response http.ResponseWriter,
 	request *http.Request,
-) error {
+) (*responses.Common, error) {
 	// TODO: подумать, возможно получение refresh токена из cookie вынести в общий код,
 	// т.к сейчас мы достаем refresh токен еще и в UserController в  Logout
 	// start region: Получение refresh токена
@@ -29,33 +30,33 @@ func (controller *TokenController) Refresh(
 
 	cookie, err := request.Cookie(cookieRefreshToken)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalGettingCookies, err)
+		controller.Logger.Infof(strings.LogFatalGettingCookies, err)
 
-		return exceptions.BadRequest(strings.ErrorTryAgaint, err)
+		return nil, exceptions.BadRequest(strings.ErrorTryAgaint, err)
 	}
 
 	refreshToken := cookie.Value
 	if refreshToken == strings.Empty {
-		controller.Logger.Fatalf(strings.LogFatalRefreshTokenIsEmpty, err)
+		controller.Logger.Infof(strings.LogFatalRefreshTokenIsEmpty, err)
 
-		return exceptions.UnauthorizedError(err)
+		return nil, exceptions.UnauthorizedError(err)
 	}
 	// end region: Получение refresh токена
 
 	tokens, err := controller.TokenService.Refresh(refreshToken)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	jsonBody, err := json.Marshal(tokens)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalConvertTokensToJson, err)
+		controller.Logger.Infof(strings.LogFatalConvertTokensToJson, err)
 
-		return exceptions.ServerError(strings.ErrorInternal, err)
+		return nil, exceptions.ServerError(strings.ErrorInternal, err)
 	}
 
-	response.WriteHeader(http.StatusOK)
-	response.Write(jsonBody)
-
-	return nil
+	return &responses.Common{
+		Status: http.StatusOK,
+		Body:   jsonBody,
+	}, nil
 }

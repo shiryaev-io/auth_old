@@ -2,9 +2,9 @@ package services
 
 import (
 	"auth/cmd/internal/res/strings"
-	"auth/cmd/internal/server/dtos"
 	"auth/cmd/internal/server/exceptions"
-	"auth/cmd/internal/server/models"
+	"auth/cmd/internal/server/models/db"
+	"auth/cmd/internal/server/models/dto"
 	"auth/cmd/pkg/logging"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,8 +12,8 @@ import (
 
 // Хранилище для пользователей
 type UserStorage interface {
-	FindByEmail(email string) (*models.User, error)
-	FindById(userId string) (*models.User, error)
+	FindByEmail(email string) (*db.User, error)
+	FindById(userId int) (*db.User, error)
 }
 
 // Сервис для работы с пользователями
@@ -24,13 +24,13 @@ type UserService struct {
 }
 
 // Авторизация пользователя
-func (service *UserService) Login(email, password string) (*models.Token, error) {
+func (service *UserService) Login(email, password string) (*dto.Tokens, error) {
 	service.Logger.Infof(strings.LogGettingUserByEmail, email)
 
 	// Проверяет, существует ли пользователь в БД
 	user, err := service.UserStorage.FindByEmail(email)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalFindUserByEmail, err)
+		service.Logger.Infof(strings.LogFatalFindUserByEmail, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorUserWithEmailNotFound, err)
 	}
@@ -46,14 +46,14 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	)
 	// Если пароли не совпадают
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		service.Logger.Fatalf(strings.LogFatalPasswordsNotMatch, err)
+		service.Logger.Infof(strings.LogFatalPasswordsNotMatch, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorInvalidPassword, err)
 	}
 
 	service.Logger.Infoln(strings.LogCreateObjectWithUserData)
 
-	userDto := &dtos.UserDto{
+	userDto := &dto.User{
 		Id:          user.Id,
 		Email:       user.Email,
 		IsActivated: user.IsActivated,
@@ -64,7 +64,7 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	// Генерируется пара токенов: access и refresh
 	tokens, err := service.TokenService.GenerateTokens(userDto)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGenerateAccessAndRefreshTokens, err)
+		service.Logger.Infof(strings.LogFatalGenerateAccessAndRefreshTokens, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedGenerateTokens, err)
 	}
@@ -72,9 +72,9 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 	service.Logger.Infoln(strings.LogSaveRefreshTokenInDb)
 
 	// Сохранение токена в БД
-	_, err = service.TokenService.SaveToken(user.Id, tokens.RefreshToken)
+	_, err = service.TokenService.SaveToken(user.Id, tokens.Refresh)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalSaveRefreshTokenInDb, err)
+		service.Logger.Infof(strings.LogFatalSaveRefreshTokenInDb, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedSaveRefreshToken, err)
 	}
@@ -83,34 +83,33 @@ func (service *UserService) Login(email, password string) (*models.Token, error)
 }
 
 // Разлогин пользователя
-func (service *UserService) Logout(refreshToken string) (*dtos.TokenDto, error) {
-	service.Logger.Infoln("Вызов функции удаления refresh токена")
+func (service *UserService) Logout(refreshToken string) error {
+	service.Logger.Infoln(strings.LogCallingRefreshTokenDeletaionFun)
 
-	token, err := service.removeToken(refreshToken)
+	err := service.removeToken(refreshToken)
 	if err != nil {
-		service.Logger.Fatalf("Не удалось удалить refresh токен: %v", err)
+		service.Logger.Infof(strings.LogFatalDeleteRefreshToken, err)
 
-		return nil, err
+		return err
 	}
 
-	service.Logger.Infoln("Refresh токен успешно был удален")
+	service.Logger.Infoln(strings.LogRefreshTokenSuccessDeleted)
 
-	return token, nil
+	return nil
 }
 
-
 // Логика удаления токена из БД
-func (service *UserService) removeToken(refreshToken string) (*dtos.TokenDto, error) {
-	service.Logger.Infoln("Вызов функции удаления токена из БД")
+func (service *UserService) removeToken(refreshToken string) error {
+	service.Logger.Infoln(strings.LogCallingTokenRemovalFunFromDb)
 
-	tokenData, err := service.TokenService.RemoveToken(refreshToken)
+	err := service.TokenService.RemoveToken(refreshToken)
 	if err != nil {
-		service.Logger.Fatalf("Не удалось удать refresh токен из БД: %v", err)
+		service.Logger.Infof(strings.LogFatalGetRefreshTokenFromDb, err)
 
-		return nil, err
+		return err
 	}
 
-	service.Logger.Infoln("Refresh токен был успешно удален из БД")
+	service.Logger.Infoln(strings.LogRefreshTokenSuccessDeletedFromDb)
 
-	return tokenData, nil
+	return nil
 }

@@ -99,11 +99,13 @@ func initAndRunServer(logger *logging.Logger) {
 	// Получение сервисов
 	tokenService := &services.TokenService{
 		TokenStorage: tokenStorage,
+		UserStorage:  userStorage,
 		Logger:       logger,
 	}
 	userService := &services.UserService{
 		UserStorage:  userStorage,
 		TokenService: tokenService,
+		Logger:       logger,
 	}
 
 	// Композиция сервисов

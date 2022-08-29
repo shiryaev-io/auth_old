@@ -2,12 +2,14 @@ package services
 
 import (
 	"auth/cmd/internal/res/strings"
-	"auth/cmd/internal/server/dtos"
 	"auth/cmd/internal/server/exceptions"
-	"auth/cmd/internal/server/models"
+	"auth/cmd/internal/server/models/db"
+	"auth/cmd/internal/server/models/dto"
 	"auth/cmd/pkg/logging"
 	"errors"
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -17,17 +19,18 @@ const (
 	jwtAccessSecret  = "JWT_ACCESS_SECRET"
 	jwtRefreshSecret = "JWT_REFRESH_SECRET"
 
-	accessTokenExpiresAt  = 10
-	refreshTokenExpiresAt = 30
+	// TODO: получать время из файла .env
+	accessTokenExpiresAt  = 5
+	refreshTokenExpiresAt = 15
 )
 
 // Интерфейс для БД, который работает с токенами
 type TokenStorage interface {
-	FindByUserId(userId string) (*dtos.TokenDto, error)
-	FindToken(refreshToken string) (*dtos.TokenDto, error)
-	SaveToken(token *dtos.TokenDto) (*dtos.TokenDto, error)
-	CreateToken(userId, refreshToken string) (*dtos.TokenDto, error)
-	RemoveToken(refreshToken string) (*dtos.TokenDto, error)
+	FindByUserId(userId int) (*db.Token, error)
+	FindToken(refreshToken string) (*db.Token, error)
+	SaveToken(token *dto.Token) error
+	CreateToken(userId int, refreshToken string) (*db.Token, error)
+	RemoveToken(refreshToken string) error
 }
 
 // Сервис для токенов
@@ -37,7 +40,7 @@ type TokenService struct {
 	Logger       *logging.Logger
 }
 
-func (service *TokenService) GenerateTokens(user *dtos.UserDto) (*models.Token, error) {
+func (service *TokenService) GenerateTokens(user *dto.User) (*dto.Tokens, error) {
 	service.Logger.Infoln(strings.LogCreateAccessToken)
 
 	// Генерация access токена
@@ -54,84 +57,102 @@ func (service *TokenService) GenerateTokens(user *dtos.UserDto) (*models.Token, 
 		return nil, exceptions.ServerError(strings.ErrorFailedLogin, err)
 	}
 
-	token := &models.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+	tokens := &dto.Tokens{
+		Access: accessToken,
+		Refresh: refreshToken,
 	}
 
-	return token, nil
+	return tokens, nil
 }
 
 // Функция сохранения refresh токена в БД
-func (service *TokenService) SaveToken(userId, refreshToken string) (*dtos.TokenDto, error) {
+func (service *TokenService) SaveToken(userId int, refreshToken string) (*dto.Token, error) {
 	service.Logger.Infoln(strings.LogGetTokenOfUser)
 
 	// Находим токен пользователя в БД
-	token, err := service.TokenStorage.FindByUserId(userId)
+	tokenFromDb, err := service.TokenStorage.FindByUserId(userId)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGetTokenOfUser, err)
+		service.Logger.Infof(strings.LogFatalGetTokenOfUser, err)
 		service.Logger.Infoln(strings.LogCreateTokenInDb)
 
 		// Если ошибка (т.е. не нашли токен для пользователя), то создаем новую запись
-		token, err = service.TokenStorage.CreateToken(
+		tokenFromDb, err = service.TokenStorage.CreateToken(
 			userId,
 			refreshToken,
 		)
 		if err != nil {
-			service.Logger.Fatalf(strings.LogFatalCreateTokenInDb, err)
+			service.Logger.Infof(strings.LogFatalCreateTokenInDb, err)
 			return nil, err
 		}
 
 		service.Logger.Infoln(strings.LogSuccessCreateTokenInDb)
 
-		return token, err
+		tokenDto := &dto.Token{
+			Id:     tokenFromDb.Id,
+			UserId: tokenFromDb.UserId,
+			Value:  tokenFromDb.Value,
+		}
+
+		return tokenDto, err
 	}
 
 	service.Logger.Infof(strings.LogSuccesFindToken, userId)
 	service.Logger.Infoln(strings.LogUpdageRefreshToken)
 
 	// Обновляем refresh токен у пользователя
-	token.RefreshToken = refreshToken
-	token, err = service.TokenStorage.SaveToken(token)
+	tokenDto := &dto.Token{
+		Id:     tokenFromDb.Id,
+		UserId: tokenFromDb.UserId,
+		Value:  refreshToken,
+	}
+	err = service.TokenStorage.SaveToken(tokenDto)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalUpdateRefreshToken, err)
+		service.Logger.Infof(strings.LogFatalUpdateRefreshToken, err)
 		return nil, err
 	}
 
 	service.Logger.Infoln(strings.LogSuccessUpdateRefreshToken)
 
-	return token, err
+	return tokenDto, err
 }
 
 // Обновляет пару access и refresh токенов
-func (service *TokenService) Refresh(refreshToken string) (*models.Token, error) {
-	service.Logger.Infoln("Валидация Refresh токена")
+func (service *TokenService) Refresh(refreshToken string) (*dto.Tokens, error) {
+	service.Logger.Infoln(strings.LogValidateRefreshToken)
 
-	payload, errorValidate := service.validateRefreshToken(refreshToken)
+	payload, err := service.validateRefreshToken(refreshToken)
+	if err != nil {
+		service.Logger.Infof(strings.LogFatalValidateToken, err)
 
-	service.Logger.Infoln("Каст интерфейса Claims в структуру StandardClaims")
+		return nil, exceptions.UnauthorizedError(err)
+	}
+
+	service.Logger.Infoln(strings.LogCastClaimsToStandardClaims)
 
 	standardClaims := payload.(*jwt.StandardClaims)
 
-	service.Logger.Infoln("Поиск refresh токена в БД")
+	service.Logger.Infoln(strings.LogFindRefreshTokenInDb)
 
-	_, errorFindToken := service.TokenStorage.FindToken(refreshToken)
-	if errorValidate != nil || errorFindToken != nil {
-		service.Logger.Fatalf("Не удалось найти или провалидировать токен: Ошибка 1: %v; Ошибка 2: %v", errorValidate, errorFindToken)
+	_, err = service.TokenStorage.FindToken(refreshToken)
+	if err != nil {
+		service.Logger.Infof(strings.LogFatalFindTokenInDb, err)
 
-		return nil, exceptions.UnauthorizedError(errorValidate)
+		return nil, exceptions.UnauthorizedError(err)
 	}
 
-	service.Logger.Infoln("Поиск пользователя по ID в БД")
-
-	user, err := service.UserStorage.FindById(standardClaims.Id)
+	userId, err := strconv.Atoi(standardClaims.Subject)
 	if err != nil {
-		service.Logger.Fatalf("Не удалось найти пользователя по ID в БД", err)
+		return nil, exceptions.BadRequest(strings.ErrorTypeOfUserIdMustBeInt, err)
+	}
+
+	user, err := service.UserStorage.FindById(userId)
+	if err != nil {
+		service.Logger.Infof(strings.LogFatalFincUserByIdInDb, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorUserWithEmailNotFound, err)
 	}
 
-	userDto := &dtos.UserDto{
+	userDto := &dto.User{
 		Id:          user.Id,
 		Email:       user.Email,
 		IsActivated: user.IsActivated,
@@ -142,7 +163,7 @@ func (service *TokenService) Refresh(refreshToken string) (*models.Token, error)
 	// Генерируется пара токенов: access и refresh
 	tokens, err := service.GenerateTokens(userDto)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGenerateAccessAndRefreshTokens, err)
+		service.Logger.Infof(strings.LogFatalGenerateAccessAndRefreshTokens, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedGenerateTokens, err)
 	}
@@ -150,9 +171,9 @@ func (service *TokenService) Refresh(refreshToken string) (*models.Token, error)
 	service.Logger.Infoln(strings.LogSaveRefreshTokenInDb)
 
 	// Сохранение токена в БД
-	_, err = service.SaveToken(user.Id, tokens.RefreshToken)
+	_, err = service.SaveToken(user.Id, tokens.Refresh)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalSaveRefreshTokenInDb, err)
+		service.Logger.Infof(strings.LogFatalSaveRefreshTokenInDb, err)
 
 		return nil, exceptions.BadRequest(strings.ErrorFailedSaveRefreshToken, err)
 	}
@@ -161,7 +182,7 @@ func (service *TokenService) Refresh(refreshToken string) (*models.Token, error)
 }
 
 // Создание access токена
-func (service *TokenService) createAccessToken(user *dtos.UserDto) (string, error) {
+func (service *TokenService) createAccessToken(user *dto.User) (string, error) {
 	// время, черз которое access токен протухнет
 	expiredAt := time.Now().Add(
 		time.Minute * accessTokenExpiresAt,
@@ -169,19 +190,19 @@ func (service *TokenService) createAccessToken(user *dtos.UserDto) (string, erro
 
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiredAt,
-		Subject:   user.Id,
+		Subject:   fmt.Sprint(user.Id),
 	}
 
 	service.Logger.Infoln(strings.LogGetJwtAccessSecret)
 	signJwtAceessSecret := os.Getenv(jwtAccessSecret)
-	service.Logger.Infof(strings.LogGettedJwtAccessSecret, signJwtAceessSecret)
+	service.Logger.Infoln(strings.LogGettedJwtAccessSecret)
 
 	service.Logger.Infoln(strings.LogGenerateAccessToken)
 
 	// Генерация access токена
 	accessToken, err := service.createJwt(claims, signJwtAceessSecret)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGenerateAccessToken, err)
+		service.Logger.Infof(strings.LogFatalGenerateAccessToken, err)
 		return strings.Empty, err
 	}
 
@@ -191,7 +212,7 @@ func (service *TokenService) createAccessToken(user *dtos.UserDto) (string, erro
 }
 
 // Создание refresh токена
-func (service *TokenService) createRefreshToken(user *dtos.UserDto) (string, error) {
+func (service *TokenService) createRefreshToken(user *dto.User) (string, error) {
 	// время, черз которое refresh токен протухнет
 	expiredAt := time.Now().Add(
 		time.Minute * refreshTokenExpiresAt,
@@ -199,19 +220,19 @@ func (service *TokenService) createRefreshToken(user *dtos.UserDto) (string, err
 
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiredAt,
-		Subject:   user.Id,
+		Subject:   fmt.Sprint(user.Id),
 	}
 
 	service.Logger.Infoln(strings.LogGetJwtRefreshSecret)
 	signJwtRefreshSecret := os.Getenv(jwtRefreshSecret)
-	service.Logger.Infoln(strings.LogGettedJwtRefreshSecret, signJwtRefreshSecret)
+	service.Logger.Infoln(strings.LogGettedJwtRefreshSecret)
 
 	service.Logger.Infoln(strings.LogGenerateRefreshToken)
 
 	// Генерация refresh токена
 	refreshToken, err := service.createJwt(claims, signJwtRefreshSecret)
 	if err != nil {
-		service.Logger.Fatalf(strings.LogFatalGenerateRefreshToken, err)
+		service.Logger.Infof(strings.LogFatalGenerateRefreshToken, err)
 		return strings.Empty, err
 	}
 
@@ -252,15 +273,18 @@ func (service *TokenService) validateRefreshToken(tokenString string) (jwt.Claim
 func (service *TokenService) validateToken(tokenString, signingKey string) (jwt.Claims, error) {
 	service.Logger.Infoln(strings.LogStartParseAndValidateToken)
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New(strings.ErrorUnexpectedSigningMethod)
-		}
-		return []byte(signingKey), nil
-	})
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&jwt.StandardClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New(strings.ErrorUnexpectedSigningMethod)
+			}
+			return []byte(signingKey), nil
+		},
+	)
 	if err != nil {
-		// TODO: вынести строку в ресурсы
-		service.Logger.Fatalf(strings.LogFatalParseJwtToken, err)
+		service.Logger.Infof(strings.LogFatalParseJwtToken, err)
 
 		return nil, err
 	}
@@ -268,6 +292,7 @@ func (service *TokenService) validateToken(tokenString, signingKey string) (jwt.
 }
 
 // Удаление одного токена из БД
-func (service *TokenService) RemoveToken(refreshToken string) (*dtos.TokenDto, error) {
-	return service.TokenStorage.RemoveToken(refreshToken)
+func (service *TokenService) RemoveToken(refreshToken string) error {
+	err := service.TokenStorage.RemoveToken(refreshToken)
+	return err
 }

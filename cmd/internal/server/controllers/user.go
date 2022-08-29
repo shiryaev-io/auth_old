@@ -3,7 +3,8 @@ package controllers
 import (
 	"auth/cmd/internal/res/strings"
 	"auth/cmd/internal/server/exceptions"
-	"auth/cmd/internal/server/requests"
+	"auth/cmd/internal/server/models/requests"
+	"auth/cmd/internal/server/models/responses"
 	"auth/cmd/internal/server/services"
 	"auth/cmd/pkg/logging"
 	"encoding/json"
@@ -27,14 +28,14 @@ type UserController struct {
 func (controller *UserController) Login(
 	response http.ResponseWriter,
 	request *http.Request,
-) error {
+) (*responses.Common, error) {
 	controller.Logger.Infoln(strings.LogGettingRequestBody)
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalReadRequestBody, err)
+		controller.Logger.Infof(strings.LogFatalReadRequestBody, err)
 
-		return exceptions.BadRequest(strings.ErrorInvalidData, err)
+		return nil, exceptions.BadRequest(strings.ErrorInvalidData, err)
 	}
 
 	controller.Logger.Infoln(strings.LogGettingJsonFromRequestBody)
@@ -42,9 +43,9 @@ func (controller *UserController) Login(
 	userRequest := requests.UserRequest{}
 	err = json.Unmarshal(body, &userRequest)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalReadJsonFromRequestBody, err)
+		controller.Logger.Infof(strings.LogFatalReadJsonFromRequestBody, err)
 		
-		return exceptions.BadRequest(strings.ErrorInvalidData, err)
+		return nil, exceptions.BadRequest(strings.ErrorInvalidData, err)
 	}
 
 	controller.Logger.Infoln(strings.LogUserAuthByLoginAndPassword)
@@ -54,56 +55,57 @@ func (controller *UserController) Login(
 		userRequest.Password,
 	)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalUserAuthByLoginAndPassword, err)
+		controller.Logger.Infof(strings.LogFatalUserAuthByLoginAndPassword, err)
 		
-		return exceptions.BadRequest(strings.ErrorWrongLoginOrPassword, err)
+		return nil, exceptions.BadRequest(strings.ErrorWrongLoginOrPassword, err)
 	}
 
 	controller.Logger.Infoln(strings.LogConvertTokensToJson)
 
 	jsonBody, err := json.Marshal(tokens)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalConvertTokensToJson, err)
+		controller.Logger.Infof(strings.LogFatalConvertTokensToJson, err)
 		
-		return exceptions.ServerError(strings.ErrorInternal, err)
+		return nil, exceptions.ServerError(strings.ErrorInternal, err)
 	}
-
-	response.WriteHeader(http.StatusOK)
-	response.Write(jsonBody)
-	return nil
+	return &responses.Common{
+		Status: http.StatusOK,
+		Body: jsonBody,
+	}, nil
 }
 
 // Разлогин пользователя
 func (controller *UserController) Logout(
 	response http.ResponseWriter,
 	request *http.Request,
-) error {
+) (*responses.Common, error) {
 	controller.Logger.Infoln(strings.LogGettingRefreshTokenFromCookies)
 
 	cookie, err := request.Cookie(cookieRefreshToken)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalGettingCookies, err)
+		controller.Logger.Infof(strings.LogFatalGettingCookies, err)
 
-		return exceptions.BadRequest(strings.ErrorTryAgaint, err)
+		return nil, exceptions.BadRequest(strings.ErrorTryAgaint, err)
 	}
 
 	refreshToken := cookie.Value
 	if refreshToken == strings.Empty {
-		controller.Logger.Fatalf(strings.LogFatalRefreshTokenIsEmpty, err)
+		controller.Logger.Infof(strings.LogFatalRefreshTokenIsEmpty, err)
 
-		return exceptions.UnauthorizedError(err)
+		return nil, exceptions.UnauthorizedError(err)
 	}
 
 	controller.Logger.Infoln(strings.LogUserLogout)
 
-	_, err = controller.UserService.Logout(refreshToken)
+	err = controller.UserService.Logout(refreshToken)
 	if err != nil {
-		controller.Logger.Fatalf(strings.LogFatalUserLogout, err)
+		controller.Logger.Infof(strings.LogFatalUserLogout, err)
 
-		return exceptions.BadRequest(strings.ErrorLogout, err)
+		return nil, exceptions.BadRequest(strings.ErrorLogout, err)
 	}
 
-	response.WriteHeader(http.StatusNoContent)
-
-	return nil
+	return &responses.Common{
+		Status: http.StatusNoContent,
+		Body:   nil,
+	}, nil
 }

@@ -23,4 +23,7 @@ const (
 	ErrorInvalidAuthorizationHeader = "Некорректный Header Authorization"
 	ErrorTokenIsEmpty               = "Токен пустой"
 	ErrorUnexpectedSigningMethod    = "Неверный метод подписи токена"
+	ErrorNoRowHasBeenUpdated        = "Ни одна строка не была обновлена"
+	ErrorNoRowHasBeenUDeleted       = "Ни одна строка не была удалена"
+	ErrorTypeOfUserIdMustBeInt      = "Тип id пользователя должен быть Int"
 )
