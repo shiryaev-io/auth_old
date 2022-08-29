@@ -20,8 +20,6 @@ const (
 	urlLogOut = urlAuth + "/logout"
 	// Путь для обновления токенов
 	urlRefresh = urlAuth + "/refresh"
-	// Главный путь приложения
-	urlSchedule = "/schedule"
 )
 
 // Структура, которая хранит роутер и сервисы
@@ -60,16 +58,6 @@ func (apiRouter *ApiRouter) Init() {
 		urlRefresh,
 		tokenController.Refresh,
 	).Methods(get)
-
-	authMiddleware := middlewares.AuthMiddleware{
-		TokenService: apiRouter.AuthService.TokenService,
-		Logger:       apiRouter.Logger,
-	}
-	// Установка middleware авторизации
-	apiRouter.Router.
-		Path(urlSchedule).
-		Subrouter().
-		Use(authMiddleware.Middleware)
 }
 
 // Устанавливает ErrorMiddleware
