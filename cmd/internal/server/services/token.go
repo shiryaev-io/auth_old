@@ -155,7 +155,6 @@ func (service *TokenService) Refresh(refreshToken string) (*dto.Tokens, error) {
 	userDto := &dto.User{
 		Id:          user.Id,
 		Email:       user.Email,
-		IsActivated: user.IsActivated,
 	}
 
 	service.Logger.Infoln(strings.LogGenerateAccessAndRefreshTokens)
