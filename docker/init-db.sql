@@ -5,8 +5,7 @@ DROP TABLE IF EXISTS tokens;
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email TEXT,
-    password TEXT,
-    is_activated BOOLEAN
+    password TEXT
 );
 
 CREATE TABLE tokens (
@@ -20,6 +19,5 @@ INSERT INTO
 VALUES
     (
         'test@test.ru',
-        '$2a$12$oHZyRyQxlrWVTjNACxFzw.udNF00.Mk4KTLjfyCZyojgzkWidKrNW',
-        FALSE
+        '$2a$12$oHZyRyQxlrWVTjNACxFzw.udNF00.Mk4KTLjfyCZyojgzkWidKrNW'
     );
