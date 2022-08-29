@@ -284,7 +284,6 @@ func (service *TokenService) validateToken(tokenString, signingKey string) (jwt.
 		},
 	)
 	if err != nil {
-		// TODO: вынести строку в ресурсы
 		service.Logger.Infof(strings.LogFatalParseJwtToken, err)
 
 		return nil, err
