@@ -58,6 +58,9 @@ func (apiRouter *ApiRouter) Init() {
 		urlRefresh,
 		tokenController.Refresh,
 	).Methods(get)
+
+	// Устанавливается middleware
+	apiRouter.Router.Use(middlewares.HeaderMiddleare)
 }
 
 // Устанавливает ErrorMiddleware
